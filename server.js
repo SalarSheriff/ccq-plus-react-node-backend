@@ -2,8 +2,19 @@ import express from 'express';
 import cors from 'cors';
 import fetch from 'node-fetch';
 
+
+//Must be imported to connect to the database. Pool is created in there
+import './db.js'
+import { getPersons, createLog } from './db.js';
+
+
+
+
+
+
 const app = express();
 const port = 4000;
+
 
 // Configure CORS options
 const corsOptions = {
@@ -11,24 +22,15 @@ const corsOptions = {
   optionsSuccessStatus: 200, // Some legacy browsers (IE11, various SmartTVs) choke on 204
 };
 
-// Enable CORS for all routes
 app.use(cors(corsOptions));
 
-/* Uses microsoft graph to get data using a user's access token
-This returns name, email etc
-*/
-const fetchProfileData = async (accessToken) => {
-  const response = await fetch('https://graph.microsoft.com/v1.0/me', {
-    headers: {
-      'Authorization': `Bearer ${accessToken}`
-    }
-  });
-  return response.json();
-};
+
 
 
 app.get('/', (req, res) => {
   res.send('Hello, World!');
+
+  createLog('20210901', '1200', 'John Doe', 'This is a message', 'Login', 'Company A');
 });
 
 
@@ -48,8 +50,25 @@ app.get('/api/protected', async (req, res) => {
 
 
 
-
-
 app.listen(port, () => {
   console.log(`Server is running on port ${port}`);
 });
+
+
+
+
+//SERVER FUNCTIONS
+
+
+
+/* Uses microsoft graph to get data using a user's access token
+This returns name, email etc
+*/
+const fetchProfileData = async (accessToken) => {
+  const response = await fetch('https://graph.microsoft.com/v1.0/me', {
+    headers: {
+      'Authorization': `Bearer ${accessToken}`
+    }
+  });
+  return response.json();
+};
