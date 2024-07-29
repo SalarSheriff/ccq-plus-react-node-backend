@@ -47,8 +47,45 @@ async function createLog(date, time, name, message, action, company) {
     }
   }
   
+async function getLogs() {
+  try {
+    const result = await pool.request().query('SELECT * FROM Log');
+    return result.recordset;
+  } catch(error) {
+    console.log(error)
+  }
 
+}
+/*
+To get the last log entry for each company in SQL, you can use the ROW_NUMBER() window function to assign a unique row number to each log entry within each company, ordered by the id or date and time (depending on how you define the "last" log). Then, you can select only the rows with the row number equal to 1.
 
+Each company gets its entries ordered in rows by id, largest id to smallest. Meaning the latest message is first
+since it has the largest id
+pick rn=1 (row number 1) for each company
+*/
+async function getLastLogForEachCompany() {
+  
+  if (pool) {
+    const query = `
+      WITH RankedLogs AS (
+          SELECT *,
+                 ROW_NUMBER() OVER (PARTITION BY company ORDER BY id DESC) AS rn
+          FROM Log
+      )
+      SELECT *
+      FROM RankedLogs
+      WHERE rn = 1;
+    `;
+
+    try {
+      const result = await pool.request().query(query);
+   
+      return result.recordset;
+    } catch (err) {
+      console.error('Failed to get the last log for each company:', err);
+    }
+  }
+}
 
 //Sample to get all "People" object from the table
 async function getPersons() {
@@ -62,4 +99,4 @@ async function getPersons() {
 
 
 
-export { getPersons, createLog };
+export { getPersons, createLog, getLastLogForEachCompany, getLogs };

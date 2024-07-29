@@ -5,7 +5,7 @@ import fetch from 'node-fetch';
 
 //Must be imported to connect to the database. Pool is created in there
 import './db.js'
-import { getPersons, createLog } from './db.js';
+import { getPersons, createLog, getLastLogForEachCompany, getLogs } from './db.js';
 
 
 
@@ -27,10 +27,12 @@ app.use(cors(corsOptions));
 
 
 
-app.get('/', (req, res) => {
+app.get('/', async (req, res) => {
   res.send('Hello, World!');
 
-  createLog('20210901', '1200', 'John Doe', 'This is a message', 'Login', 'Company A');
+  //createLog('20210901', '1200', 'John Doe', 'This is a message', 'Login', 'Company A');
+
+  //console.log(await getLastLogForEachCompany());
 });
 
 
@@ -45,6 +47,18 @@ app.get('/api/protected', async (req, res) => {
   } catch (error) {
     console.error('Error fetching profile data:', error);
     res.status(500).send('Failed to fetch profile data');
+  }
+});
+
+
+app.get('/api/getLastLogForEachCompany', async (req, res) => { 
+
+  try {
+    const lastLog = await getLastLogForEachCompany();
+    res.json(lastLog);
+  } catch (error) {
+    console.error('Error fetching last log:', error);
+    res.status(500).send('Failed to fetch last log');
   }
 });
 
