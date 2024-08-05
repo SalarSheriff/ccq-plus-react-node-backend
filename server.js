@@ -80,6 +80,31 @@ app.post('/api/uploadLog', async (req, res)=> {
   //console.log(req.body)
 })
 
+app.post('/api/uploadPresencePatrol', async (req, res) => { 
+
+  try {
+    const { company, message, name, action, patrolTime } = req.body;
+
+    //Get the time the patrol was started by subtracting the current time from the patrol time(seconds)
+    const patrolTimeInMinutes = patrolTime / 60.0
+    // Subtract patrol time from current time
+    const resultTime = dayjs().subtract(patrolTimeInMinutes, 'minute');
+    // Format the result time in 'HHmm'
+    const startTime = resultTime.format('HHmm');
+
+
+
+    const log = await createLog(dayjs().format('YYYYMMDD'),startTime, name, message, action, company, dayjs().format('HHmm')); //method in db.js
+    res.json(log);
+  } catch (error) {
+    console.error('Error creating log:', error);
+    res.status(500).send('Failed to create log');
+  }
+
+
+
+});
+
 app.get('/api/getLogs/:company', async (req, res) => {
 
   try {
