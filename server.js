@@ -80,6 +80,17 @@ app.post('/api/uploadLog', async (req, res)=> {
   //console.log(req.body)
 })
 
+app.get('/api/getLogs/:company', async (req, res) => {
+
+  try {
+    const logs = await getLogs(req.params.company);
+    res.json(logs);
+  } catch (error) {
+    console.error('Error fetching logs:', error);
+    res.status(500).send('Failed to fetch logs');
+  }
+
+})
 
 app.listen(port, () => {
   console.log(`Server is running on port ${port}`);

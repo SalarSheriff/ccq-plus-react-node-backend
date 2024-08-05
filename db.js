@@ -47,8 +47,21 @@ async function createLog(date, time, name, message, action, company, timeOut) {
       }
     }
   }
+
+  async function getLogs(company) {
+    try {
   
-async function getLogs() {
+  
+      const result = await pool.request()
+        .input('company', sql.VarChar, company) // Add the company parameter
+        .query('SELECT * FROM Log WHERE company = @company'); // Parameterized query
+  
+      return result.recordset;
+    } catch (error) {
+      console.log(error);
+    }
+  }
+async function getAllLogs() {
   try {
     const result = await pool.request().query('SELECT * FROM Log');
     return result.recordset;
@@ -100,4 +113,4 @@ async function getPersons() {
 
 
 
-export { getPersons, createLog, getLastLogForEachCompany, getLogs };
+export { getPersons, createLog, getLastLogForEachCompany, getLogs, getAllLogs };
