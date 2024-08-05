@@ -22,13 +22,13 @@ async function connectToDatabase() {
     }
 }
 
-async function createLog(date, time, name, message, action, company) {
+async function createLog(date, time, name, message, action, company, timeOut) {
     
   
     if (pool) {
       const query = `
-        INSERT INTO Log (date, time, name, message, action, company)
-        VALUES (@date, @time, @name, @message, @action, @company);
+        INSERT INTO Log (date, time, name, message, action, company, timeOut)
+        VALUES (@date, @time, @name, @message, @action, @company, @timeOut);
       `;
   
       try {
@@ -39,6 +39,7 @@ async function createLog(date, time, name, message, action, company) {
           .input('message', sql.NVarChar, message)
           .input('action', sql.NVarChar, action)
           .input('company', sql.NVarChar, company)
+          .input('timeOut', sql.NVarChar, timeOut)
           .query(query);
         console.log('Log entry inserted');
       } catch (err) {

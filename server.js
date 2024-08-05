@@ -70,7 +70,7 @@ app.post('/api/uploadLog', async (req, res)=> {
 
   try {
     const { company, message, name, action } = req.body;
-    const log = await createLog(dayjs().format('YYYYMMDD'),dayjs().format('HHmm'), name, message, action, company); //method in db.js
+    const log = await createLog(dayjs().format('YYYYMMDD'),dayjs().format('HHmm'), name, message, action, company, "no_time_out"); //method in db.js
     res.json(log);
   } catch (error) {
     console.error('Error creating log:', error);
