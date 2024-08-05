@@ -1,7 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import fetch from 'node-fetch';
-
+import dayjs from 'dayjs';
 
 //Must be imported to connect to the database. Pool is created in there
 import './db.js'
@@ -13,6 +13,7 @@ import { getPersons, createLog, getLastLogForEachCompany, getLogs } from './db.j
 
 
 const app = express();
+
 const port = 4000;
 
 
@@ -23,7 +24,7 @@ const corsOptions = {
 };
 
 app.use(cors(corsOptions));
-
+app.use(express.json());
 
 
 
@@ -62,6 +63,22 @@ app.get('/api/getLastLogForEachCompany', async (req, res) => {
   }
 });
 
+
+
+app.post('/api/uploadLog', async (req, res)=> {
+
+
+  try {
+    const { company, message, name, action } = req.body;
+    const log = await createLog(dayjs().format('YYYYMMDD'),dayjs().format('HHmm'), name, message, action, company); //method in db.js
+    res.json(log);
+  } catch (error) {
+    console.error('Error creating log:', error);
+    res.status(500).send('Failed to create log');
+  }
+
+  //console.log(req.body)
+})
 
 
 app.listen(port, () => {
