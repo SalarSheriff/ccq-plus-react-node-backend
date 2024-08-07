@@ -5,7 +5,7 @@ import dayjs from 'dayjs';
 
 //Must be imported to connect to the database. Pool is created in there
 import './db.js'
-import { getPersons, createLog, getLastLogForEachCompany, getLogs } from './db.js';
+import { getPersons, createLog, getLastLogForEachCompany, getLogs, getLogsInRange } from './db.js';
 
 
 
@@ -83,7 +83,7 @@ app.post('/api/uploadLog', async (req, res)=> {
 app.post('/api/uploadPresencePatrol', async (req, res) => { 
 
   try {
-    const { company, message, name, action, patrolTime } = req.body;
+    const { company, message, name, action, patrolTime} = req.body;
 
     //Get the time the patrol was started by subtracting the current time from the patrol time(seconds)
     const patrolTimeInMinutes = patrolTime / 60.0
@@ -116,6 +116,17 @@ app.get('/api/getLogs/:company', async (req, res) => {
   }
 
 })
+
+app.get('/api/getLogsInRange/:company/:date1/:date2', async (req, res) => {
+  
+    try {
+      const logs = await getLogsInRange(req.params.company, req.params.date1, req.params.date2);
+      res.json(logs);
+    } catch (error) {
+      console.error('Error fetching logs:', error);
+      res.status(500).send('Failed to fetch logs');
+    }
+});
 
 app.listen(port, () => {
   console.log(`Server is running on port ${port}`);

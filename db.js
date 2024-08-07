@@ -61,6 +61,19 @@ async function createLog(date, time, name, message, action, company, timeOut) {
       console.log(error);
     }
   }
+  async function getLogsInRange(company, date1, date2) {
+    try {
+      const result = await pool.request()
+        .input('company', sql.VarChar, company) // Add the company parameter
+        .input('date1', sql.VarChar, date1) // Add the date1 parameter
+        .input('date2', sql.VarChar, date2) // Add the date2 parameter
+        .query('SELECT * FROM Log WHERE company = @company AND date >= @date1 AND date <= @date2'); // Parameterized query with date range
+  
+      return result.recordset;
+    } catch (error) {
+      console.log(error);
+    }
+  }
 async function getAllLogs() {
   try {
     const result = await pool.request().query('SELECT * FROM Log');
@@ -113,4 +126,4 @@ async function getPersons() {
 
 
 
-export { getPersons, createLog, getLastLogForEachCompany, getLogs, getAllLogs };
+export { getPersons, createLog, getLastLogForEachCompany, getLogs, getAllLogs, getLogsInRange };
