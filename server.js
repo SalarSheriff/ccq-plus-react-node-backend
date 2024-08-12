@@ -2,7 +2,9 @@ import express from 'express';
 import cors from 'cors';
 import fetch from 'node-fetch';
 import dayjs from 'dayjs';
-
+import dotenv from 'dotenv';
+import https from 'https'
+import fs from 'fs'
 //Must be imported to connect to the database. Pool is created in there
 import './db.js'
 import { getPersons, createLog, getLastLogForEachCompany, getLogs, getLogsInRange } from './db.js';
@@ -14,18 +16,30 @@ import { getPersons, createLog, getLastLogForEachCompany, getLogs, getLogsInRang
 
 const app = express();
 
-const port = 4000;
+const port = process.env.PORT || 4000;
 
 
-// Configure CORS options
+const allowedOrigins = process.env.ALLOWED_CORS_ORIGINS.split(',');
+
 const corsOptions = {
-  origin: 'http://localhost:3000', // Allowed origins to call API
-  optionsSuccessStatus: 200, // Some legacy browsers (IE11, various SmartTVs) choke on 204
+  origin: function (origin, callback) {
+    if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  optionsSuccessStatus: 200,
 };
 
 app.use(cors(corsOptions));
-app.use(express.json());
 
+app.use(express.json());
+// Load your SSL certificate and key
+const options = {
+  key: fs.readFileSync('./server.key'),
+  cert: fs.readFileSync('./server.cert')
+};
 
 
 app.get('/', async (req, res) => {
@@ -128,12 +142,17 @@ app.get('/api/getLogsInRange/:company/:date1/:date2', async (req, res) => {
     }
 });
 
-app.listen(port, () => {
-  console.log(`Server is running on port ${port}`);
+
+
+//Hosting server on un secure http
+// app.listen(port, () => {
+//   console.log(`Server is running on port ${port}`);
+// });
+
+// Hosting server on https
+https.createServer(options, app).listen(port, () => {
+  console.log('Secure server running on https://localhost:' + port);
 });
-
-
-
 
 //SERVER FUNCTIONS
 
