@@ -145,14 +145,14 @@ app.get('/api/getLogsInRange/:company/:date1/:date2', async (req, res) => {
 
 
 //Hosting server on un secure http
-// app.listen(port, () => {
-//   console.log(`Server is running on port ${port}`);
-// });
-
-// Hosting server on https
-https.createServer(options, app).listen(port, () => {
-  console.log('Secure server running on https://localhost:' + port);
+app.listen(port, () => {
+  console.log(`Server is running on port ${port}`);
 });
+
+// // Hosting server on https
+// https.createServer(options, app).listen(port, () => {
+//   console.log('Secure server running on https://localhost:' + port);
+// });
 
 //SERVER FUNCTIONS
 
