@@ -7,7 +7,7 @@ import https from 'https'
 import fs from 'fs'
 //Must be imported to connect to the database. Pool is created in there
 import './db.js'
-import { getPersons, createLog, getLastLogForEachCompany, getLogs, getLogsInRange } from './db.js';
+import { getPersons, createLog, getLastLogForEachCompany, getLogs, getLogsInRange, validateAdmin } from './db.js';
 
 
 
@@ -142,7 +142,23 @@ app.get('/api/getLogsInRange/:company/:date1/:date2', async (req, res) => {
     }
 });
 
+app.get('/test', async (req, res) => {
+  res.send('TEST');
+})
 
+app.get('/api/validateAdmin', async (req, res) => {
+  try {
+    const accessToken = req.headers.authorization
+    const profileData = await fetchProfileData(accessToken);
+    console.log(profileData);
+
+    let isAdmin = await validateAdmin(profileData.mail);
+    res.json(isAdmin);
+  } catch (error) {
+    console.error('Error fetching profile data:', error);
+    res.status(500).send('Failed to fetch profile data');
+  }
+});
 
 //Hosting server on un secure http
 app.listen(port, () => {

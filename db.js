@@ -163,5 +163,23 @@ async function getPersons() {
 }
 
 
+async function validateAdmin(email) {
+  // If the pool is not connected, connect to the database
+  if (!pool || !pool.connected) {
+      pool = await sql.connect(config);
+  }
 
-export { getPersons, createLog, getLastLogForEachCompany, getLogs, getAllLogs, getLogsInRange };
+  try {
+      const result = await pool.request()
+          .input('Email', sql.NVarChar, email)
+          .query('SELECT COUNT(*) as count FROM AuthorizedAdmins WHERE email = @Email');
+
+      return result.recordset[0].count > 0;
+  } catch (err) {
+      console.error('SQL error:', err);
+      throw err;
+  }
+}
+
+
+export { getPersons, createLog, getLastLogForEachCompany, getLogs, getAllLogs, getLogsInRange, validateAdmin };
