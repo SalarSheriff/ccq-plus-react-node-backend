@@ -4,6 +4,8 @@ import config from './dbconfig.js';
 
 //A pool connects to the database. It can handle multiple connections for all users
 let pool;
+
+
 //Connect to the database and set pool
 connectToDatabase();
 
@@ -14,6 +16,13 @@ connectToDatabase();
 
 //Use the dbconfig.js file to connect to the database
 async function connectToDatabase() {
+
+  //If the pool is not connected, connect to the database
+    if(!pool || !pool.connected) {
+
+      pool = await sql.connect(config);
+    }
+
     try {
         pool = await sql.connect(config);
         console.log('Connected to the SQL database');
@@ -23,7 +32,11 @@ async function connectToDatabase() {
 }
 
 async function createLog(date, time, name, message, action, company, timeOut) {
-    
+    //If the pool is not connected, connect to the database
+    if(!pool || !pool.connected) {
+
+      pool = await sql.connect(config);
+    }
   
     if (pool) {
       const query = `
@@ -49,6 +62,12 @@ async function createLog(date, time, name, message, action, company, timeOut) {
   }
 
   async function getLogs(company) {
+
+    //If the pool is not connected, connect to the database
+    if(!pool || !pool.connected) {
+
+      pool = await sql.connect(config);
+    }
     try {
   
   
@@ -62,6 +81,11 @@ async function createLog(date, time, name, message, action, company, timeOut) {
     }
   }
   async function getLogsInRange(company, date1, date2) {
+    //If the pool is not connected, connect to the database
+    if(!pool || !pool.connected) {
+
+      pool = await sql.connect(config);
+    }
     try {
       const result = await pool.request()
         .input('company', sql.VarChar, company) // Add the company parameter
@@ -75,6 +99,11 @@ async function createLog(date, time, name, message, action, company, timeOut) {
     }
   }
 async function getAllLogs() {
+  //If the pool is not connected, connect to the database
+  if(!pool || !pool.connected) {
+
+    pool = await sql.connect(config);
+  }
   try {
     const result = await pool.request().query('SELECT * FROM Log');
     return result.recordset;
@@ -91,7 +120,11 @@ since it has the largest id
 pick rn=1 (row number 1) for each company
 */
 async function getLastLogForEachCompany() {
-  
+  //If the pool is not connected, connect to the database
+  if(!pool || !pool.connected) {
+
+    pool = await sql.connect(config);
+  }
   if (pool) {
     const query = `
       WITH RankedLogs AS (
@@ -116,6 +149,11 @@ async function getLastLogForEachCompany() {
 
 //Sample to get all "People" object from the table
 async function getPersons() {
+  //If the pool is not connected, connect to the database
+  if(!pool || !pool.connected) {
+
+    pool = await sql.connect(config);
+  }
     try {
         const result = await pool.request().query('SELECT * FROM Person');
         return result.recordset;
