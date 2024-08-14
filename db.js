@@ -1,6 +1,6 @@
 import sql from 'mssql';
 import config from './dbconfig.js';
-
+import fs from 'fs';
 
 //A pool connects to the database. It can handle multiple connections for all users
 let pool;
@@ -180,6 +180,49 @@ async function validateAdmin(email) {
       throw err;
   }
 }
+async function insertImage(name, imagePath) {
+  if (!pool || !pool.connected) {
+      pool = await sql.connect(config);
+  }
+
+  try {
+      const imageData = fs.readFileSync(imagePath); // Read the image file as binary data
+
+      const result = await pool.request()
+          .input('Name', sql.NVarChar, name)
+          .input('ImageData', sql.VarBinary, imageData)
+          .query('INSERT INTO Images (Name, ImageData) VALUES (@Name, @ImageData)');
+
+      console.log('Image inserted successfully:', result);
+  } catch (err) {
+      console.error('SQL error:', err);
+  }
+}
 
 
-export { getPersons, createLog, getLastLogForEachCompany, getLogs, getAllLogs, getLogsInRange, validateAdmin };
+async function getImage(id, outputPath) {
+  if (!pool || !pool.connected) {
+      pool = await sql.connect(config);
+  }
+
+  try {
+      const result = await pool.request()
+          .input('Id', sql.Int, id)
+          .query('SELECT ImageData FROM Images WHERE Id = @Id');
+
+      if (result.recordset.length > 0) {
+          const imageData = result.recordset[0].ImageData;
+          fs.writeFileSync(outputPath, imageData); // Save the binary data to a file
+          console.log('Image saved to', outputPath);
+      } else {
+          console.log('Image not found.');
+      }
+  } catch (err) {
+      console.error('SQL error:', err);
+  }
+}
+
+
+//insertImage('testImg', 'test.png');
+//getImage(1, 'plswork.png');
+export { getPersons, createLog, getLastLogForEachCompany, getLogs, getAllLogs, getLogsInRange, validateAdmin, insertImage,getImage };
