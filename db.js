@@ -1,7 +1,7 @@
 import sql from 'mssql';
 import config from './dbconfig.js';
 import fs from 'fs';
-
+import dayjs from 'dayjs';
 //A pool connects to the database. It can handle multiple connections for all users
 let pool;
 
@@ -188,10 +188,16 @@ async function insertImage(name, imagePath) {
   try {
       const imageData = fs.readFileSync(imagePath); // Read the image file as binary data
 
+      // Get the current date and time as strings using dayjs
+      const date = dayjs().format('YYYYMMDD'); 
+      const time = dayjs().format('HHmm');  
+
       const result = await pool.request()
           .input('Name', sql.NVarChar, name)
           .input('ImageData', sql.VarBinary, imageData)
-          .query('INSERT INTO Images (Name, ImageData) VALUES (@Name, @ImageData)');
+          .input('Date', sql.NVarChar, date)
+          .input('Time', sql.NVarChar, time)
+          .query('INSERT INTO Images (Name, ImageData, Date, Time) VALUES (@Name, @ImageData, @Date, @Time)');
 
       console.log('Image inserted successfully:', result);
   } catch (err) {
@@ -223,6 +229,6 @@ async function getImage(id, outputPath) {
 }
 
 
-//insertImage('testImg', 'test.png');
+
 //getImage(1, 'plswork.png');
 export { getPersons, createLog, getLastLogForEachCompany, getLogs, getAllLogs, getLogsInRange, validateAdmin, insertImage,getImage };

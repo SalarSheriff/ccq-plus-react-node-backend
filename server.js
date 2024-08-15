@@ -7,8 +7,22 @@ import https from 'https'
 import fs from 'fs'
 //Must be imported to connect to the database. Pool is created in there
 import './db.js'
-import { getPersons, createLog, getLastLogForEachCompany, getLogs, getLogsInRange, validateAdmin } from './db.js';
+import { getPersons, createLog, getLastLogForEachCompany, getLogs, getLogsInRange, validateAdmin , insertImage} from './db.js';
 
+import multer from 'multer'
+import path from 'path'
+
+// Setup multer for image uploads
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+      cb(null, 'uploads/'); // Save images temporarily
+  },
+  filename: function (req, file, cb) {
+      cb(null, `${Date.now()}-${file.originalname}`);
+  }
+});
+
+const upload = multer({ storage: storage });
 
 
 
@@ -51,7 +65,28 @@ app.get('/', async (req, res) => {
 });
 
 
+app.post('/api/uploadimages', upload.array('images'), async (req, res) => {
+  const comment = req.body.comment;
+  const images = req.files;
 
+  try {
+      for (const image of images) {
+          const imageName = image.originalname;
+          const imagePath = image.path;
+
+          // Insert image into the database
+          await insertImage(imageName, imagePath);
+
+          // Optionally, delete the file after insertion to clean up
+          fs.unlinkSync(imagePath);
+      }
+
+      res.json({ message: 'Images and comment uploaded successfully!' });
+  } catch (error) {
+      console.error('Error handling image upload:', error);
+      res.status(500).json({ message: 'Error uploading images' });
+  }
+});
 
 //Test method to see if a token can get an api response from graph
 app.get('/api/protected', async (req, res) => {
