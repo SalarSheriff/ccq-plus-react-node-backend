@@ -7,7 +7,7 @@ import https from 'https'
 import fs from 'fs'
 //Must be imported to connect to the database. Pool is created in there
 import './db.js'
-import { getPersons, createLog, getLastLogForEachCompany, getLogs, getLogsInRange, validateAdmin , insertImage} from './db.js';
+import { getPersons, createLog, getLastLogForEachCompany, getLogs, getLogsInRange, validateAdmin , insertImage, getImages} from './db.js';
 
 import multer from 'multer'
 import path from 'path'
@@ -68,14 +68,16 @@ app.get('/', async (req, res) => {
 app.post('/api/uploadimages', upload.array('images'), async (req, res) => {
   const comment = req.body.comment;
   const images = req.files;
+const company = req.body.company;
 
   try {
       for (const image of images) {
           const imageName = image.originalname;
           const imagePath = image.path;
+          
 
           // Insert image into the database
-          await insertImage(imageName, imagePath);
+          await insertImage(imageName, imagePath, company);
 
           // Optionally, delete the file after insertion to clean up
           fs.unlinkSync(imagePath);
@@ -87,7 +89,13 @@ app.post('/api/uploadimages', upload.array('images'), async (req, res) => {
       res.status(500).json({ message: 'Error uploading images' });
   }
 });
+app.get('/api/images/:company/:date', async (req, res) => {
+  const company = req.params.company
+const date = req.params.date
 
+let images = await getImages(company, date)
+ res.json(images);
+});
 //Test method to see if a token can get an api response from graph
 app.get('/api/protected', async (req, res) => {
   try {

@@ -180,7 +180,7 @@ async function validateAdmin(email) {
       throw err;
   }
 }
-async function insertImage(name, imagePath) {
+async function insertImage(name, imagePath, company) {
   if (!pool || !pool.connected) {
       pool = await sql.connect(config);
   }
@@ -189,15 +189,16 @@ async function insertImage(name, imagePath) {
       const imageData = fs.readFileSync(imagePath); // Read the image file as binary data
 
       // Get the current date and time as strings using dayjs
-      const date = dayjs().format('YYYYMMDD'); 
-      const time = dayjs().format('HHmm');  
+      const date = dayjs().format('YYYYMMDD');
+      const time = dayjs().format('HHmm');
 
       const result = await pool.request()
           .input('Name', sql.NVarChar, name)
+          .input('Company', sql.NVarChar, company)
           .input('ImageData', sql.VarBinary, imageData)
           .input('Date', sql.NVarChar, date)
           .input('Time', sql.NVarChar, time)
-          .query('INSERT INTO Images (Name, ImageData, Date, Time) VALUES (@Name, @ImageData, @Date, @Time)');
+          .query('INSERT INTO Images (Name, Company, ImageData, Date, Time) VALUES (@Name, @Company, @ImageData, @Date, @Time)');
 
       console.log('Image inserted successfully:', result);
   } catch (err) {
@@ -230,5 +231,32 @@ async function getImage(id, outputPath) {
 
 
 
+async function getImages(company, date) {
+  if (!company || !date) {
+    return res.status(400).json({ message: 'Company and date are required' });
+}
+
+try {
+    if (!pool || !pool.connected) {
+        pool = await sql.connect(config);
+    }
+
+    const result = await pool.request()
+        .input('Company', sql.NVarChar, company)
+        .input('Date', sql.NVarChar, date)
+        .query('SELECT Name, ImageData FROM Images WHERE Company = @Company AND Date = @Date');
+
+    const images = result.recordset.map(row => ({
+        name: row.Name,
+        imageData: row.ImageData.toString('base64') // Convert binary data to base64 string
+    }));
+
+    return (images);
+} catch (err) {
+    console.error('SQL error:', err);
+    
+}
+}
+
 //getImage(1, 'plswork.png');
-export { getPersons, createLog, getLastLogForEachCompany, getLogs, getAllLogs, getLogsInRange, validateAdmin, insertImage,getImage };
+export { getPersons, createLog, getLastLogForEachCompany, getLogs, getAllLogs, getLogsInRange, validateAdmin, insertImage,getImage, getImages };
