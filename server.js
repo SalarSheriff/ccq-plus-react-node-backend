@@ -2,6 +2,8 @@ import express from 'express';
 import cors from 'cors';
 import fetch from 'node-fetch';
 import dayjs from 'dayjs';
+import utc from 'dayjs/plugin/utc.js';
+import timezone from 'dayjs/plugin/timezone.js';
 import dotenv from 'dotenv';
 import https from 'https'
 import fs from 'fs'
@@ -11,6 +13,16 @@ import { getPersons, createLog, getLastLogForEachCompany, getLogs, getLogsInRang
 
 import multer from 'multer'
 import path from 'path'
+
+
+
+
+//Load the timezone dayjs plugins
+dayjs.extend(utc);
+dayjs.extend(timezone);
+dayjs.tz.setDefault('America/New_York'); // set default timezone to New York(EST)
+
+//dayjs().tz() to get date in time zone
 
 // Setup multer for image uploads
 const storage = multer.diskStorage({
@@ -57,7 +69,7 @@ const options = {
 
 
 app.get('/', async (req, res) => {
-  res.send('Hello, World!');
+  res.send('Hello, World!' + dayjs().tz().format("YYYYMMDD HHmm"));
 
   //createLog('20210901', '1200', 'John Doe', 'This is a message', 'Login', 'Company A');
 
@@ -127,7 +139,7 @@ app.post('/api/uploadLog', async (req, res)=> {
 
   try {
     const { company, message, name, action } = req.body;
-    const log = await createLog(dayjs().format('YYYYMMDD'),dayjs().format('HHmm'), name, message, action, company, "no_time_out"); //method in db.js
+    const log = await createLog(dayjs().tz().format('YYYYMMDD'),dayjs().tz().format('HHmm'), name, message, action, company, "no_time_out"); //method in db.js
     res.json(log);
   } catch (error) {
     console.error('Error creating log:', error);
@@ -145,13 +157,13 @@ app.post('/api/uploadPresencePatrol', async (req, res) => {
     //Get the time the patrol was started by subtracting the current time from the patrol time(seconds)
     const patrolTimeInMinutes = patrolTime / 60.0
     // Subtract patrol time from current time
-    const resultTime = dayjs().subtract(patrolTimeInMinutes, 'minute');
+    const resultTime = dayjs().tz().subtract(patrolTimeInMinutes, 'minute');
     // Format the result time in 'HHmm'
     const startTime = resultTime.format('HHmm');
 
 
 
-    const log = await createLog(dayjs().format('YYYYMMDD'),startTime, name, message, action, company, dayjs().format('HHmm')); //method in db.js
+    const log = await createLog(dayjs().tz().format('YYYYMMDD'),startTime, name, message, action, company, dayjs().tz().format('HHmm')); //method in db.js
     res.json(log);
   } catch (error) {
     console.error('Error creating log:', error);
