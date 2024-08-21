@@ -283,9 +283,38 @@ async function getPersons() {
       throw err; // Re-throw error to handle it at the calling function level
     }
   }
+  async function insertImageInspectionComments(cadet_name, company, comment) {
+    // Ensure the pool is connected
+    if (!pool || !pool.connected) {
+      pool = await sql.connect(config);
+    }
+  
+    try {
+      // Define the current time when the comment is inserted
+      //Time is managed server side
+      const time = dayjs().tz().format('HHmm'); // Using dayjs to get the current time in 'HHmm' format
+      const date = dayjs().tz().format('YYYYMMDD'); // Using dayjs to get the current date in 'YYYYMMDD' format
+      // Insert the comment into the database
+      const result = await pool.request()
+        .input('cadet_name', sql.NVarChar(100), cadet_name)
+        .input('company', sql.NVarChar(100), company)
+        .input('date', sql.NVarChar(10), date)
+        .input('time', sql.NVarChar(8), time)  // Assuming time is stored as 'HHmm' string
+        .input('comment', sql.NVarChar(sql.MAX), comment)
+        .query(`
+          INSERT INTO ImageInspectionComment (cadet_name, company, date, time, comment)
+          VALUES (@cadet_name, @company, @date, @time, @comment);
+        `);
+  
+      console.log('Image inspection comment inserted successfully:', result);
+      return result.recordset;
+    } catch (err) {
+      console.error('Error inserting Image Inspection Comment:', err);
+      throw err; // Re-throw the error to handle it at the calling function level
+    }
+  }
   
 
 
-
   //getImage(1, 'plswork.png');
-  export { getPersons, createLog, getLastLogForEachCompany, getLogs, getAllLogs, getLogsInRange, validateAdmin, insertImage, getImage, getImages, getImageInspectionComments };
+  export { getPersons, createLog, getLastLogForEachCompany, getLogs, getAllLogs, getLogsInRange, validateAdmin, insertImage, getImage, getImages, getImageInspectionComments, insertImageInspectionComments };

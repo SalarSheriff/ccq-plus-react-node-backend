@@ -9,7 +9,7 @@ import https from 'https'
 import fs from 'fs'
 //Must be imported to connect to the database. Pool is created in there
 import './db.js'
-import { getPersons, createLog, getLastLogForEachCompany, getLogs, getLogsInRange, validateAdmin , insertImage, getImages, getImageInspectionComments} from './db.js';
+import { getPersons, createLog, getLastLogForEachCompany, getLogs, getLogsInRange, validateAdmin , insertImage, getImages, getImageInspectionComments, insertImageInspectionComments} from './db.js';
 
 import multer from 'multer'
 import path from 'path'
@@ -197,6 +197,22 @@ app.get('/api/getLogsInRange/:company/:date1/:date2', async (req, res) => {
     }
 });
 
+
+
+app.post('/api/uploadImageInspectionComments', async (req, res) => { 
+
+//Time is managed server side
+  try {
+    const { cadet_name, company,comment } = req.body;
+    const log = await insertImageInspectionComments(cadet_name, company, comment);
+    res.json(log);
+  } catch (error) {
+    console.error('Error creating log:', error);
+    res.status(500).send('Failed to create log');
+  }
+
+  
+});
 app.get('/api/getImageInspectionComments/:company/:date', async (req, res) => {
 
   console.log(req.params.company, req.params.date);
