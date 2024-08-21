@@ -9,7 +9,7 @@ import https from 'https'
 import fs from 'fs'
 //Must be imported to connect to the database. Pool is created in there
 import './db.js'
-import { getPersons, createLog, getLastLogForEachCompany, getLogs, getLogsInRange, validateAdmin , insertImage, getImages} from './db.js';
+import { getPersons, createLog, getLastLogForEachCompany, getLogs, getLogsInRange, validateAdmin , insertImage, getImages, getImageInspectionComments} from './db.js';
 
 import multer from 'multer'
 import path from 'path'
@@ -196,6 +196,21 @@ app.get('/api/getLogsInRange/:company/:date1/:date2', async (req, res) => {
       res.status(500).send('Failed to fetch logs');
     }
 });
+
+app.get('/api/getImageInspectionComments/:company/:date', async (req, res) => {
+
+  console.log(req.params.company, req.params.date);
+
+  try {
+    const comments = await getImageInspectionComments(req.params.company, req.params.date);
+    console.log(comments);
+    res.json(comments);
+    
+  } catch (error) {
+    console.error('Error fetching comments:', error);
+    res.status(500).send('Failed to fetch comments');
+  }
+ });
 
 app.get('/test', async (req, res) => {
   res.send('TEST');
