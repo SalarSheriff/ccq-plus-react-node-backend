@@ -68,6 +68,13 @@ const options = {
 };
 
 
+
+
+
+setInterval(() => {
+  console.log('Keeping the server awake');
+}, 5000); // keep server awake
+
 app.get('/', async (req, res) => {
   res.send('Hello, World!' + dayjs().tz().format("YYYYMMDD HHmm"));
 
