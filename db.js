@@ -2,6 +2,8 @@ import sql from 'mssql';
 import config from './dbconfig.js';
 import fs from 'fs';
 import dayjs from 'dayjs';
+import utc from 'dayjs/plugin/utc.js';
+import timezone from 'dayjs/plugin/timezone.js';
 //A pool connects to the database. It can handle multiple connections for all users
 let pool;
 
@@ -10,7 +12,11 @@ let pool;
 connectToDatabase();
 
 
-
+//MAYBE THIS IS DUPLOICATED
+//Load the timezone dayjs plugins
+dayjs.extend(utc);
+dayjs.extend(timezone);
+dayjs.tz.setDefault('America/New_York'); // set default timezone to New York(EST)
 
 
 
@@ -191,8 +197,8 @@ async function getPersons() {
       const imageData = fs.readFileSync(imagePath); // Read the image file as binary data
 
       // Get the current date and time as strings using dayjs
-      const date = dayjs().format('YYYYMMDD');
-      const time = dayjs().format('HHmm');
+      const date = dayjs().tz().format('YYYYMMDD');
+      const time = dayjs().tz().format('HHmm');
 
       const result = await pool.request()
         .input('Name', sql.NVarChar, name)

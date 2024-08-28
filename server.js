@@ -76,11 +76,20 @@ setInterval(() => {
 }, 5000); // keep server awake
 
 app.get('/', async (req, res) => {
-  res.send('Hello, World!' + dayjs().tz().format("YYYYMMDD HHmm"));
 
-  //createLog('20210901', '1200', 'John Doe', 'This is a message', 'Login', 'Company A');
 
-  //console.log(await getLastLogForEachCompany());
+
+  const currentTime = dayjs().tz().format("YYYYMMDD HHmm");
+
+  res.send(`
+    <html>
+      <body>
+        
+      <h1>CCQ Plus has been fixed</h1>
+        <p><a href="https://ccqplus.com">Click here to reload the site CCQPlus</a></p>
+      </body>
+    </html>
+  `);
 });
 
 
