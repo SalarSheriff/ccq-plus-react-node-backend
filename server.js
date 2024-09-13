@@ -70,10 +70,10 @@ const options = {
 
 
 
-
-setInterval(() => {
-  console.log('Keeping the server awake');
-}, 5000); // keep server awake
+//Bad for billing? Aug 23rd billing rampage
+// setInterval(() => {
+//   console.log('Keeping the server awake');
+// }, 5000); // keep server awake
 
 app.get('/', async (req, res) => {
 
