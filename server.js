@@ -118,6 +118,11 @@ const company = req.body.company;
   }
 });
 app.get('/api/images/:company/:date', async (req, res) => {
+
+
+
+
+  
   const company = req.params.company
 const date = req.params.date
 
@@ -158,7 +163,13 @@ if(!authorizedUser){
 
 
 app.post('/api/uploadLog', async (req, res)=> {
-
+//Check if user is authorized
+let authorizedUser = await isAuthorizedUser(req.headers.authorization);
+if(!authorizedUser){ 
+  console.error('Error fetching logs:');
+  return res.status(401).send('Unable to fetch logs. Unauthorized user');
+  
+}
 
   try {
     const { company, message, name, action } = req.body;
@@ -173,6 +184,15 @@ app.post('/api/uploadLog', async (req, res)=> {
 })
 
 app.post('/api/uploadPresencePatrol', async (req, res) => { 
+
+  //Check if user is authorized
+  let authorizedUser = await isAuthorizedUser(req.headers.authorization);
+  if(!authorizedUser){ 
+    console.error('Error fetching logs:');
+    return res.status(401).send('Unable to fetch logs. Unauthorized user');
+    
+  }
+
 
   try {
     const { company, message, name, action, patrolTime} = req.body;
