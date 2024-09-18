@@ -138,6 +138,13 @@ app.get('/api/protected', async (req, res) => {
 
 
 app.get('/api/getLastLogForEachCompany', async (req, res) => { 
+//Check if user is authorized
+let authorizedUser = await isAuthorizedUser(req.headers.authorization);
+if(!authorizedUser){ 
+  console.error('Error fetching logs:');
+  return res.status(401).send('Unable to fetch logs. Unauthorized user');
+  
+}
 
   try {
     const lastLog = await getLastLogForEachCompany();
@@ -192,6 +199,16 @@ app.post('/api/uploadPresencePatrol', async (req, res) => {
 
 app.get('/api/getLogs/:company', async (req, res) => {
 
+//Check if user is authorized
+  let authorizedUser = await isAuthorizedUser(req.headers.authorization);
+  if(!authorizedUser){ 
+    console.error('Error fetching logs:');
+    return res.status(401).send('Unable to fetch logs. Unauthorized user');
+  
+  }
+
+
+  //Get the logs
   try {
     const logs = await getLogs(req.params.company);
     res.json(logs);
@@ -203,7 +220,15 @@ app.get('/api/getLogs/:company', async (req, res) => {
 })
 
 app.get('/api/getLogsInRange/:company/:date1/:date2', async (req, res) => {
-  
+  //Check if user is authorized
+  let authorizedUser = await isAuthorizedUser(req.headers.authorization);
+  if(!authorizedUser){ 
+    console.error('Error fetching logs:');
+    return res.status(401).send('Unable to fetch logs. Unauthorized user');
+    
+  }
+
+
     try {
       const logs = await getLogsInRange(req.params.company, req.params.date1, req.params.date2);
       res.json(logs);
@@ -278,6 +303,21 @@ app.listen(port, () => {
 
 /* Uses microsoft graph to get data using a user's access token
 This returns name, email etc
+Example data
+{
+  '@odata.context': 'https://graph.microsoft.com/v1.0/$metadata#users/$entity',
+  businessPhones: [ '+1 609.917.0672' ],
+  displayName: 'Sheriff, Salar H CDT 2027',
+  givenName: 'Salar',
+  jobTitle: 'Cadet',
+  mail: 'salar.sheriff@westpoint.edu',
+  mobilePhone: null,
+  officeLocation: 'I1',
+  preferredLanguage: null,
+  surname: 'Sheriff',
+  userPrincipalName: 'salar.sheriff@westpoint.edu',
+  id: '3430d3f6-79dd-4b00-b013-22c2b55d5afb'
+}
 */
 const fetchProfileData = async (accessToken) => {
   const response = await fetch('https://graph.microsoft.com/v1.0/me', {
@@ -285,5 +325,43 @@ const fetchProfileData = async (accessToken) => {
       'Authorization': `Bearer ${accessToken}`
     }
   });
+
+  // Check if the response status indicates an error (e.g., unauthorized or other errors)
+  if (!response.ok) {
+    const error = new Error('Failed to fetch profile data');
+    error.status = response.status;
+    throw error;
+  }
+
   return response.json();
 };
+
+//Checks if the user is authorized to use the app
+async function isAuthorizedUser(token) {
+  try {
+    const profileData = await fetchProfileData(token);
+
+    // Check if the 'mail' property exists and contains the correct domain
+    if (profileData.mail && profileData.mail.includes("@westpoint.edu")) {
+
+      console.log('Authorized user: ' + profileData.mail + " passed authorization check");
+      return true;
+    } else {
+      // Explicitly handle the case where the email domain is not as expected
+      return false;
+    }
+
+  } catch (error) {
+    // Log the error for debugging (can be expanded to use a proper logging mechanism)
+    console.error('Authorization error:', error);
+
+    // Handle specific errors based on the status code if necessary
+    if (error.status === 401) {
+      // Token is invalid or expired
+      return false;
+    } else {
+      // Handle other errors (network issues, etc.)
+      return false;
+    }
+  }
+}
