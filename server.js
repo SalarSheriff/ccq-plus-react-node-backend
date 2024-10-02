@@ -1,3 +1,4 @@
+// Import necessary modules (using ES modules syntax)
 import express from 'express';
 import cors from 'cors';
 import fetch from 'node-fetch';
@@ -5,48 +6,61 @@ import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc.js';
 import timezone from 'dayjs/plugin/timezone.js';
 import dotenv from 'dotenv';
-import https from 'https'
-import fs from 'fs'
-//Must be imported to connect to the database. Pool is created in there
-import './db.js'
-import { getPersons, createLog, getLastLogForEachCompany, getLogs, getLogsInRange, validateAdmin , insertImage, getImages, getImageInspectionComments, insertImageInspectionComments} from './db.js';
+import https from 'https';
+import fs from 'fs';
+import multer from 'multer';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import os from 'os';
 
-import multer from 'multer'
-import path from 'path'
+// Import your database methods from db.js
+import {
+  getPersons, createLog, getLastLogForEachCompany, getLogs, getLogsInRange,
+  validateAdmin, insertImage, getImages, getImageInspectionComments, insertImageInspectionComments
+} from './db.js';
 
+// Configure dotenv to use environment variables
+dotenv.config();
 
+// The equivalent of __dirname in ES modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
+// Load your SSL certificate and key
+const options = {
+  key: fs.readFileSync('key.pem'),
+  cert: fs.readFileSync('cert.pem'),
+};
 
-//Load the timezone dayjs plugins
-dayjs.extend(utc);
-dayjs.extend(timezone);
-dayjs.tz.setDefault('America/New_York'); // set default timezone to New York(EST)
+// Get the local IP address (same as in first script)
+const getLocalIPAddress = () => {
+  const interfaces = os.networkInterfaces();
+  for (const name of Object.keys(interfaces)) {
+    for (const iface of interfaces[name]) {
+      if (iface.family === 'IPv4' && !iface.internal) {
+        return iface.address;
+      }
+    }
+  }
+  return 'localhost';
+};
 
-//dayjs().tz() to get date in time zone
-
-// Setup multer for image uploads
+// Setup multer for image uploads (same as second script)
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-      cb(null, 'uploads/'); // Save images temporarily
+    cb(null, 'uploads/'); // Save images temporarily
   },
   filename: function (req, file, cb) {
-      cb(null, `${Date.now()}-${file.originalname}`);
+    cb(null, `${Date.now()}-${file.originalname}`);
   }
 });
-
 const upload = multer({ storage: storage });
 
-
-
-
-
+// Initialize Express app
 const app = express();
 
-const port = process.env.PORT || 4000;
-
-
+// CORS setup
 const allowedOrigins = process.env.ALLOWED_CORS_ORIGINS.split(',');
-
 const corsOptions = {
   origin: function (origin, callback) {
     if (!origin || allowedOrigins.indexOf(origin) !== -1) {
@@ -57,99 +71,52 @@ const corsOptions = {
   },
   optionsSuccessStatus: 200,
 };
-
 app.use(cors(corsOptions));
 
+// Body parser middleware for JSON
 app.use(express.json());
-// Load your SSL certificate and key
-const options = {
-  key: fs.readFileSync('./server.key'),
-  cert: fs.readFileSync('./server.cert')
-};
 
+// Load the timezone plugins and set default timezone to New York (EST)
+dayjs.extend(utc);
+dayjs.extend(timezone);
+dayjs.tz.setDefault('America/New_York');
 
+// Serve the static files for the frontend
+app.use(express.static(path.join(__dirname, 'dist')));
 
+// Routes for your backend API
 
-//Bad for billing? Aug 23rd billing rampage
-// setInterval(() => {
-//   console.log('Keeping the server awake');
-// }, 5000); // keep server awake
-
-app.get('/', async (req, res) => {
-
-
-
-  const currentTime = dayjs().tz().format("YYYYMMDD HHmm");
-
-  res.send(`
-    <html>
-      <body>
-        
-      <h1>CCQ Plus has been fixed</h1>
-        <p><a href="https://ccqplus.com">Click here to reload the site CCQPlus</a></p>
-      </body>
-    </html>
-  `);
-});
-
-
+// 1. Upload Images
 app.post('/api/uploadimages', upload.array('images'), async (req, res) => {
   const comment = req.body.comment;
   const images = req.files;
-const company = req.body.company;
+  const company = req.body.company;
 
   try {
-      for (const image of images) {
-          const imageName = image.originalname;
-          const imagePath = image.path;
-          
+    for (const image of images) {
+      const imageName = image.originalname;
+      const imagePath = image.path;
 
-          // Insert image into the database
-          await insertImage(imageName, imagePath, company);
+      // Insert image into the database
+      await insertImage(imageName, imagePath, company);
 
-          // Optionally, delete the file after insertion to clean up
-          fs.unlinkSync(imagePath);
-      }
+      // Optionally, delete the file after insertion to clean up
+      fs.unlinkSync(imagePath);
+    }
 
-      res.json({ message: 'Images and comment uploaded successfully!' });
+    res.json({ message: 'Images and comment uploaded successfully!' });
   } catch (error) {
-      console.error('Error handling image upload:', error);
-      res.status(500).json({ message: 'Error uploading images' });
-  }
-});
-app.get('/api/images/:company/:date', async (req, res) => {
-
-
-
-
-  
-  const company = req.params.company
-const date = req.params.date
-
-let images = await getImages(company, date)
- res.json(images);
-});
-//Test method to see if a token can get an api response from graph
-app.get('/api/protected', async (req, res) => {
-  try {
-    const accessToken = req.headers.authorization
-    const profileData = await fetchProfileData(accessToken);
-    console.log(profileData);
-  } catch (error) {
-    console.error('Error fetching profile data:', error);
-    res.status(500).send('Failed to fetch profile data');
+    console.error('Error handling image upload:', error);
+    res.status(500).json({ message: 'Error uploading images' });
   }
 });
 
-
-app.get('/api/getLastLogForEachCompany', async (req, res) => { 
-//Check if user is authorized
-let authorizedUser = await isAuthorizedUser(req.headers.authorization);
-if(!authorizedUser){ 
-  console.error('Error fetching logs:');
-  return res.status(401).send('Unable to fetch logs. Unauthorized user');
-  
-}
+// 2. Get Last Log for Each Company
+app.get('/api/getLastLogForEachCompany', async (req, res) => {
+  let authorizedUser = await isAuthorizedUser(req.headers.authorization);
+  if (!authorizedUser) {
+    return res.status(401).send('Unauthorized user');
+  }
 
   try {
     const lastLog = await getLastLogForEachCompany();
@@ -160,75 +127,69 @@ if(!authorizedUser){
   }
 });
 
-
-
-app.post('/api/uploadLog', async (req, res)=> {
-//Check if user is authorized
-let authorizedUser = await isAuthorizedUser(req.headers.authorization);
-if(!authorizedUser){ 
-  console.error('Error fetching logs:');
-  return res.status(401).send('Unable to fetch logs. Unauthorized user');
-  
-}
+// 3. Upload Log
+app.post('/api/uploadLog', async (req, res) => {
+  let authorizedUser = await isAuthorizedUser(req.headers.authorization);
+  if (!authorizedUser) {
+    return res.status(401).send('Unauthorized user');
+  }
 
   try {
     const { company, message, name, action } = req.body;
-    const log = await createLog(dayjs().tz().format('YYYYMMDD'),dayjs().tz().format('HHmm'), name, message, action, company, "no_time_out"); //method in db.js
+    const log = await createLog(
+      dayjs().tz().format('YYYYMMDD'),
+      dayjs().tz().format('HHmm'),
+      name,
+      message,
+      action,
+      company,
+      "no_time_out"
+    );
     res.json(log);
   } catch (error) {
     console.error('Error creating log:', error);
     res.status(500).send('Failed to create log');
   }
-
-  //console.log(req.body)
-})
-
-app.post('/api/uploadPresencePatrol', async (req, res) => { 
-
-  //Check if user is authorized
-  let authorizedUser = await isAuthorizedUser(req.headers.authorization);
-  if(!authorizedUser){ 
-    console.error('Error fetching logs:');
-    return res.status(401).send('Unable to fetch logs. Unauthorized user');
-    
-  }
-
-
-  try {
-    const { company, message, name, action, patrolTime} = req.body;
-
-    //Get the time the patrol was started by subtracting the current time from the patrol time(seconds)
-    const patrolTimeInMinutes = patrolTime / 60.0
-    // Subtract patrol time from current time
-    const resultTime = dayjs().tz().subtract(patrolTimeInMinutes, 'minute');
-    // Format the result time in 'HHmm'
-    const startTime = resultTime.format('HHmm');
-
-
-
-    const log = await createLog(dayjs().tz().format('YYYYMMDD'),startTime, name, message, action, company, dayjs().tz().format('HHmm')); //method in db.js
-    res.json(log);
-  } catch (error) {
-    console.error('Error creating log:', error);
-    res.status(500).send('Failed to create log');
-  }
-
-
-
 });
 
-app.get('/api/getLogs/:company', async (req, res) => {
-
-//Check if user is authorized
+// 4. Upload Presence Patrol Log
+app.post('/api/uploadPresencePatrol', async (req, res) => {
   let authorizedUser = await isAuthorizedUser(req.headers.authorization);
-  if(!authorizedUser){ 
-    console.error('Error fetching logs:');
-    return res.status(401).send('Unable to fetch logs. Unauthorized user');
-  
+  if (!authorizedUser) {
+    return res.status(401).send('Unauthorized user');
   }
 
+  try {
+    const { company, message, name, action, patrolTime } = req.body;
 
-  //Get the logs
+    // Calculate start time by subtracting patrol time
+    const patrolTimeInMinutes = patrolTime / 60.0;
+    const resultTime = dayjs().tz().subtract(patrolTimeInMinutes, 'minute');
+    const startTime = resultTime.format('HHmm');
+
+    const log = await createLog(
+      dayjs().tz().format('YYYYMMDD'),
+      startTime,
+      name,
+      message,
+      action,
+      company,
+      dayjs().tz().format('HHmm')
+    );
+    res.json(log);
+  } catch (error) {
+    console.error('Error creating log:', error);
+    res.status(500).send('Failed to create log');
+  }
+});
+
+// 5. Get Logs for a Specific Company
+app.get('/api/getLogs/:company', async (req, res) => {
+  let authorizedUser = await isAuthorizedUser(req.headers.authorization);
+  if (!authorizedUser) {
+    return res.status(401).send('Unauthorized user');
+  }
+
   try {
     const logs = await getLogs(req.params.company);
     res.json(logs);
@@ -236,68 +197,52 @@ app.get('/api/getLogs/:company', async (req, res) => {
     console.error('Error fetching logs:', error);
     res.status(500).send('Failed to fetch logs');
   }
-
-})
-
-app.get('/api/getLogsInRange/:company/:date1/:date2', async (req, res) => {
-  //Check if user is authorized
-  let authorizedUser = await isAuthorizedUser(req.headers.authorization);
-  if(!authorizedUser){ 
-    console.error('Error fetching logs:');
-    return res.status(401).send('Unable to fetch logs. Unauthorized user');
-    
-  }
-
-
-    try {
-      const logs = await getLogsInRange(req.params.company, req.params.date1, req.params.date2);
-      res.json(logs);
-    } catch (error) {
-      console.error('Error fetching logs:', error);
-      res.status(500).send('Failed to fetch logs');
-    }
 });
 
+// 6. Get Logs in a Date Range for a Specific Company
+app.get('/api/getLogsInRange/:company/:date1/:date2', async (req, res) => {
+  let authorizedUser = await isAuthorizedUser(req.headers.authorization);
+  if (!authorizedUser) {
+    return res.status(401).send('Unauthorized user');
+  }
 
-
-app.post('/api/uploadImageInspectionComments', async (req, res) => { 
-
-//Time is managed server side
   try {
-    const { cadet_name, company,comment } = req.body;
+    const logs = await getLogsInRange(req.params.company, req.params.date1, req.params.date2);
+    res.json(logs);
+  } catch (error) {
+    console.error('Error fetching logs:', error);
+    res.status(500).send('Failed to fetch logs');
+  }
+});
+
+// 7. Upload Image Inspection Comments
+app.post('/api/uploadImageInspectionComments', async (req, res) => {
+  try {
+    const { cadet_name, company, comment } = req.body;
     const log = await insertImageInspectionComments(cadet_name, company, comment);
     res.json(log);
   } catch (error) {
     console.error('Error creating log:', error);
     res.status(500).send('Failed to create log');
   }
-
-  
 });
+
+// 8. Get Image Inspection Comments
 app.get('/api/getImageInspectionComments/:company/:date', async (req, res) => {
-
-  console.log(req.params.company, req.params.date);
-
   try {
     const comments = await getImageInspectionComments(req.params.company, req.params.date);
-    console.log(comments);
     res.json(comments);
-    
   } catch (error) {
     console.error('Error fetching comments:', error);
     res.status(500).send('Failed to fetch comments');
   }
- });
+});
 
-app.get('/test', async (req, res) => {
-  res.send('TEST');
-})
-
+// 9. Validate Admin (Microsoft Graph Integration)
 app.get('/api/validateAdmin', async (req, res) => {
   try {
-    const accessToken = req.headers.authorization
+    const accessToken = req.headers.authorization;
     const profileData = await fetchProfileData(accessToken);
-    console.log(profileData);
 
     let isAdmin = await validateAdmin(profileData.mail);
     res.json(isAdmin);
@@ -307,81 +252,42 @@ app.get('/api/validateAdmin', async (req, res) => {
   }
 });
 
-//Hosting server on un secure http
-app.listen(port, () => {
-  console.log(`Server is running on port ${port}`);
+// Fall back to the index.html for any non-API route
+app.get('*', (req, res) => {
+  res.sendFile(path.resolve(__dirname, 'dist', 'index.html'));
 });
 
-// // Hosting server on https
-// https.createServer(options, app).listen(port, () => {
-//   console.log('Secure server running on https://localhost:' + port);
-// });
+// Start the HTTPS server
+const port = process.env.PORT || 3000;
+https.createServer(options, app).listen(port, '0.0.0.0', () => {
+  const localIP = getLocalIPAddress();
+  console.log(`HTTPS Server running on https://${localIP}:${port}`);
+});
 
-//SERVER FUNCTIONS
-
-
-
-/* Uses microsoft graph to get data using a user's access token
-This returns name, email etc
-Example data
-{
-  '@odata.context': 'https://graph.microsoft.com/v1.0/$metadata#users/$entity',
-  businessPhones: [ '+1 609.917.0672' ],
-  displayName: 'Sheriff, Salar H CDT 2027',
-  givenName: 'Salar',
-  jobTitle: 'Cadet',
-  mail: 'salar.sheriff@westpoint.edu',
-  mobilePhone: null,
-  officeLocation: 'I1',
-  preferredLanguage: null,
-  surname: 'Sheriff',
-  userPrincipalName: 'salar.sheriff@westpoint.edu',
-  id: '3430d3f6-79dd-4b00-b013-22c2b55d5afb'
-}
-*/
+// Helper functions
 const fetchProfileData = async (accessToken) => {
   const response = await fetch('https://graph.microsoft.com/v1.0/me', {
     headers: {
       'Authorization': `Bearer ${accessToken}`
     }
   });
-
-  // Check if the response status indicates an error (e.g., unauthorized or other errors)
   if (!response.ok) {
     const error = new Error('Failed to fetch profile data');
     error.status = response.status;
     throw error;
   }
-
   return response.json();
 };
 
-//Checks if the user is authorized to use the app
 async function isAuthorizedUser(token) {
   try {
     const profileData = await fetchProfileData(token);
-
-    // Check if the 'mail' property exists and contains the correct domain
     if (profileData.mail && profileData.mail.includes("@westpoint.edu")) {
-
-      console.log('Authorized user: ' + profileData.mail + " passed authorization check");
       return true;
     } else {
-      // Explicitly handle the case where the email domain is not as expected
       return false;
     }
-
   } catch (error) {
-    // Log the error for debugging (can be expanded to use a proper logging mechanism)
-    console.error('Authorization error:', error);
-
-    // Handle specific errors based on the status code if necessary
-    if (error.status === 401) {
-      // Token is invalid or expired
-      return false;
-    } else {
-      // Handle other errors (network issues, etc.)
-      return false;
-    }
+    return false;
   }
 }
