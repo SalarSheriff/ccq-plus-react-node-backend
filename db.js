@@ -215,6 +215,11 @@ async function getPersons() {
   }
 
 
+
+
+
+  
+
   async function getImage(id, outputPath) {
     if (!pool || !pool.connected) {
       pool = await sql.connect(config);

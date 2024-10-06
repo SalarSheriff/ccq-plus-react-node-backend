@@ -1,13 +1,19 @@
 import dotenv from 'dotenv';
 dotenv.config();
 
+
+
+
+
 const dbConfig = {
     user: process.env.DB_USER,
     password: process.env.DB_PASSWORD,
-    server: process.env.DB_SERVER,
+    server: "10.114.163.22",
+    port: 1433,
     database: process.env.DB_DATABASE,
+   
     options: {
-        encrypt: true,  // Encrypt the connection
+        encrypt: false,  // Encrypt the connection. DISABLE FOR SELF SIGNED CERTIFICATES
         enableArithAbort: true  // Required for compatibility
     },
     pool: {
