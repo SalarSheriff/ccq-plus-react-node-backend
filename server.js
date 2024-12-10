@@ -14,7 +14,10 @@ import { getPersons, createLog, getLastLogForEachCompany, getLogs, getLogsInRang
 import multer from 'multer'
 import path from 'path'
 
-
+import { fileURLToPath } from 'url';
+// Define __dirname for ES modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 
 //Load the timezone dayjs plugins
@@ -61,6 +64,11 @@ const corsOptions = {
 app.use(cors(corsOptions));
 
 app.use(express.json());
+
+// Serve static files from the React build directory
+app.use('/', express.static(path.join(__dirname, 'dist')));
+
+
 // Load your SSL certificate and key
 const options = {
   key: fs.readFileSync('./server.key'),
@@ -75,22 +83,7 @@ const options = {
 //   console.log('Keeping the server awake');
 // }, 5000); // keep server awake
 
-app.get('/', async (req, res) => {
 
-
-
-  const currentTime = dayjs().tz().format("YYYYMMDD HHmm");
-
-  res.send(`
-    <html>
-      <body>
-        
-      <h1>CCQ Plus has been fixed</h1>
-        <p><a href="https://ccqplus.com">Click here to reload the site CCQPlus</a></p>
-      </body>
-    </html>
-  `);
-});
 
 
 app.post('/api/uploadimages', upload.array('images'), async (req, res) => {
@@ -307,6 +300,22 @@ app.get('/api/validateAdmin', async (req, res) => {
   }
 });
 
+
+
+
+
+
+
+
+//THIS MUST BE DEFINED AT THE END BECAUSE IT CONTAINS /*, if defined before other API routes then they will be overridden by this guy
+app.get('/*', async (req, res) => {
+
+
+
+  //const currentTime = dayjs().tz().format("YYYYMMDD HHmm");
+
+  res.sendFile(path.join(__dirname, 'dist', 'index.html'));
+});
 //Hosting server on un secure http
 app.listen(port, () => {
   console.log(`Server is running on port ${port}`);
