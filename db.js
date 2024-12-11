@@ -1,9 +1,10 @@
-import sql from 'mssql';
-import config from './dbconfig.js';
-import fs from 'fs';
-import dayjs from 'dayjs';
-import utc from 'dayjs/plugin/utc.js';
-import timezone from 'dayjs/plugin/timezone.js';
+const sql = require('mssql');
+const config = require('./dbconfig.js');
+const fs = require('fs');
+const dayjs = require('dayjs');
+const utc = require('dayjs/plugin/utc');
+const timezone = require('dayjs/plugin/timezone');
+
 //A pool connects to the database. It can handle multiple connections for all users
 let pool;
 
@@ -323,4 +324,18 @@ async function getPersons() {
 
 
   //getImage(1, 'plswork.png');
-  export { getPersons, createLog, getLastLogForEachCompany, getLogs, getAllLogs, getLogsInRange, validateAdmin, insertImage, getImage, getImages, getImageInspectionComments, insertImageInspectionComments };
+  module.exports = {
+    getPersons,
+    createLog,
+    getLastLogForEachCompany,
+    getLogs,
+    getAllLogs,
+    getLogsInRange,
+    validateAdmin,
+    insertImage,
+    getImage,
+    getImages,
+    getImageInspectionComments,
+    insertImageInspectionComments
+  };
+  

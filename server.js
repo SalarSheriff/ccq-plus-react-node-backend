@@ -1,18 +1,31 @@
-import express from 'express';
-import cors from 'cors';
-import fetch from 'node-fetch';
-import dayjs from 'dayjs';
-import utc from 'dayjs/plugin/utc.js';
-import timezone from 'dayjs/plugin/timezone.js';
-import dotenv from 'dotenv';
-import https from 'https'
-import fs from 'fs'
-//Must be imported to connect to the database. Pool is created in there
-import './db.js'
-import { getPersons, createLog, getLastLogForEachCompany, getLogs, getLogsInRange, validateAdmin , insertImage, getImages, getImageInspectionComments, insertImageInspectionComments} from './db.js';
+const express = require('express');
+const cors = require('cors');
 
-import multer from 'multer'
-import path from 'path'
+const dayjs = require('dayjs');
+const utc = require('dayjs/plugin/utc');
+const timezone = require('dayjs/plugin/timezone');
+const dotenv = require('dotenv');
+const https = require('https');
+const fs = require('fs');
+
+// Must be imported to connect to the database. Pool is created in there
+require('./db.js');
+
+const {
+  getPersons,
+  createLog,
+  getLastLogForEachCompany,
+  getLogs,
+  getLogsInRange,
+  validateAdmin,
+  insertImage,
+  getImages,
+  getImageInspectionComments,
+  insertImageInspectionComments
+} = require('./db.js');
+
+const multer = require('multer');
+const path = require('path');
 
 import { fileURLToPath } from 'url';
 // Define __dirname for ES modules
